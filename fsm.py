@@ -4,8 +4,10 @@ from dearpygui.simple import *
 doubleClickTimer = 0
 radius = 50
 circles = [ [1*radius, radius], [3*radius, radius], [5*radius, radius], [7*radius, radius] ]
+circles = [ [1*radius, radius, None], [3*radius, radius, None], [5*radius, radius, None], [7*radius, radius, None] ]
 white = [ 255, 255, 255, 255 ]
 dragging = False 
+target = ""
 
 
 def main_callback(sender, data):
@@ -13,6 +15,7 @@ def main_callback(sender, data):
     global radius
     global dragging
     global white
+    global target
     
     if is_mouse_button_dragging(mvMouseButton_Left, 10):
         set_value("Left Mouse Dragging", "True")
@@ -21,9 +24,23 @@ def main_callback(sender, data):
 
     if is_mouse_button_clicked(mvMouseButton_Left):
         set_value("Left Mouse Clicked", "True")
-        print("Left Mouse Clicked at " + str(get_mouse_pos()))
+        mouse = get_mouse_pos()
+        mx = mouse[0]
+        my = mouse[1]
+        print("Left Mouse Clicked at " + str(mouse[0]) + ", " + str(mouse[1]))
+        
+        # Find the closest state position to the mouse click using (mx - px)^2 + (my - py)^2.
+        closest = float("inf")
+        for index, value in enumerate(circles):
+            distance = pow((mx - value[0]), 2) + pow((my - value[1]), 2)
+            print(value[2] + ": " + str(distance))
+            if closest > distance:
+                closest = distance          # If this is closer, save the distance.
+                target = index              # If this is closer, save the index.
+                
+        print("Target = " + str(target) + ", distance = ", str(distance))
         dragging = True
-    
+        
     if is_key_down(mvKey_Shift) and is_mouse_button_clicked(mvMouseButton_Left):
         set_value("Shift + Left Mouse Clicked", "True")
     
@@ -42,8 +59,12 @@ def main_callback(sender, data):
             set_value("Left Mouse Double Clicked", "False")
             
     if dragging:
-        #modify_draw_command("drawing##widget","movingCircle", center=get_mouse_pos(), radius=radius, color=white, thickness=2.0)
-        modify_draw_command("drawing##widget","StateTag1", center=get_mouse_pos(), radius=radius, color=white, thickness=2.0)
+        #modify_draw_command("drawing##widget","StateTag1", center=get_mouse_pos(), radius=radius, color=white, thickness=2.0)
+        mouse = get_mouse_pos()
+        modify_draw_command("drawing##widget", circles[target][2], center=mouse, radius=radius, color=white, thickness=2.0)
+        circles[target][0] = mouse[0]
+        circles[target][1] = mouse[1]
+        
 
 
 with window("Main Window"):
@@ -60,11 +81,14 @@ with window("Main Window"):
     
     id = 0
     for state in circles:
-        print(state)
+        #print(state)
         id = id + 1
         stateTag = "StateTag" + str(id)
-        print(stateTag)
+        center = state[0:2]
+        #print(stateTag)
+        #print(center)
         draw_circle("drawing##widget", state, radius, white, tag=stateTag, thickness=2.0)
+        state[2] = stateTag
     
     set_render_callback(main_callback)
     
