@@ -3,9 +3,12 @@ from dearpygui.simple import *
 
 doubleClickTimer = 0
 radius = 50
-circles = [ [1*radius, radius], [3*radius, radius], [5*radius, radius], [7*radius, radius] ]
-circles = [ [1*radius, radius, None], [3*radius, radius, None], [5*radius, radius, None], [7*radius, radius, None] ]
+#circles = [ [1*radius, radius], [3*radius, radius], [5*radius, radius], [7*radius, radius] ]
+#circles = [ [1*radius, radius, None], [3*radius, radius, None], [5*radius, radius, None], [7*radius, radius, None] ]
+circles = [ [1*radius, radius, None, None], [3*radius, radius, None, None], [5*radius, radius, None, None], [7*radius, radius, None, None] ]
+
 white = [ 255, 255, 255, 255 ]
+
 dragging = False 
 target = ""
 
@@ -38,7 +41,7 @@ def main_callback(sender, data):
                 closest = distance          # If this is closer, save the distance.
                 target = index              # If this is closer, save the index.
                 
-        print("Target = " + str(target) + ", distance = ", str(distance))
+        print("Target = " + str(target) + ", distance = ", str(distance) +", nameID=" + circles[target][3])
         dragging = True
         
     if is_key_down(mvKey_Shift) and is_mouse_button_clicked(mvMouseButton_Left):
@@ -59,9 +62,9 @@ def main_callback(sender, data):
             set_value("Left Mouse Double Clicked", "False")
             
     if dragging:
-        #modify_draw_command("drawing##widget","StateTag1", center=get_mouse_pos(), radius=radius, color=white, thickness=2.0)
         mouse = get_mouse_pos()
-        modify_draw_command("drawing##widget", circles[target][2], center=mouse, radius=radius, color=white, thickness=2.0)
+        modify_draw_command("drawing##widget", circles[target][2], center=mouse)
+        modify_draw_command("drawing##widget", circles[target][3], pos=mouse)
         circles[target][0] = mouse[0]
         circles[target][1] = mouse[1]
         
@@ -84,12 +87,15 @@ with window("Main Window"):
         #print(state)
         id = id + 1
         stateTag = "StateTag" + str(id)
+        nameTag = "NameTag" + str(id)
         center = state[0:2]
         #print(stateTag)
         #print(center)
-        draw_circle("drawing##widget", state, radius, white, tag=stateTag, thickness=2.0)
+        draw_circle("drawing##widget", center, radius, white, tag=stateTag, thickness=2.0)
+        draw_text("drawing##widget", center, str(id), color=white, tag=nameTag, size=12)
         state[2] = stateTag
-    
+        state[3] = nameTag
+        
     set_render_callback(main_callback)
     
     
