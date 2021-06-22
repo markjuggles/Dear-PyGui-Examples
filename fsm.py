@@ -1,6 +1,9 @@
 from dearpygui.core import *
 from dearpygui.simple import *
 
+# cmd /K cd "$(CURRENT_DIRECTORY)" & "python.exe" "$(FULL_CURRENT_PATH)"
+# Notepad++ mapped to [CTRL][SHIFT][NUM+]
+
 doubleClickTimer = 0
 radius = 50
 bubbleColor = [ 255, 255, 255, 255 ]    # Bubble border color.
@@ -14,6 +17,13 @@ bubbleInfo = [
     [3*radius, radius, None, None, None, None], 
     [5*radius, radius, None, None, None, None], 
     [7*radius, radius, None, None, None, None] ]
+
+                                        # FromState, ToState, LineTag
+connectInfo = [
+    [ 0, 1, None],
+    [ 1, 2, None],
+    [ 2, 3, None],
+    [ 3, 0, None] ]
 
 def main_callback(sender, data):
     global doubleClickTimer
@@ -76,8 +86,35 @@ def main_callback(sender, data):
         position[0] = mouse[0] - bubbleInfo[target][4]
         position[1] = mouse[1] - bubbleInfo[target][5]
         modify_draw_command("drawing##widget", bubbleInfo[target][3], pos=position)
+        
+        updateConnections(target)
 
 
+# updateConnections()
+# 
+# Draw the connecting lines between states.
+#
+def updateConnections(target):
+    for line in connectInfo:
+        orig = line[0]
+        dest = line[1]
+        if (orig == target) or (dest == target):
+            print(line)
+            p1 = [0,0]
+            p1 = bubbleInfo[orig][0:2]
+            
+            p2 = [0,0]
+            p2 = bubbleInfo[dest][0:2]
+            
+            print(p1)
+            print(p2)
+            print(line[2])
+            modify_draw_command("drawing##widget", line[2], p1=p1, p2=p2)
+            
+            
+#
+# Initialize the states and connections.
+#
 with window("Main Window"):
     
     # Create the drawing area.
@@ -105,7 +142,22 @@ with window("Main Window"):
         position[0] = position[0] - state[4]
         position[1] = position[1] - state[5]
         draw_text("drawing##widget", position, nameTag, color=bubbleColor, tag=nameTag, size=12)
-
+    
+    
+    # Create a line for each entry in connectionInfo[].
+    for index, value in enumerate(connectInfo):
+        lineTag = "Line" + str(index)
+        p1 = [0,0]
+        p1[0] = bubbleInfo[value[0]][4]
+        p1[1] = bubbleInfo[value[0]][5]
+        p2 = [0,0]
+        p2[0] = bubbleInfo[value[1]][4]
+        p2[1] = bubbleInfo[value[1]][5]
+        
+        draw_line("drawing##widget", p1, p2, bubbleColor, 2, tag=lineTag)
+        print(lineTag)
+        value[2] = lineTag
+    
     # Set the graphic renderer callback to support moving the visual objects.
     set_render_callback(main_callback)
     
