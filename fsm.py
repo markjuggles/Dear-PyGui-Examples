@@ -92,9 +92,7 @@ def main_callback(sender, data):
         bubbleInfo[target][1] = mouse[1]
         
         # Move the State Name Text.  Note that we have to apply the stored offset to center.
-        position = [0,0]
-        position[0] = mouse[0] - bubbleInfo[target][4]
-        position[1] = mouse[1] - bubbleInfo[target][5]
+        position = [ (mouse[0] - bubbleInfo[target][4]), (mouse[1] - bubbleInfo[target][5]) ]
         modify_draw_command("drawing##widget", bubbleInfo[target][3], pos=position)
         
         updateConnections(target)
@@ -140,11 +138,9 @@ def updateConnections(target):
             #print(line)
             
             # The center of the state of the line origin.
-            pc1 = [0,0]
             pc1 = bubbleInfo[orig][0:2]
             
             # The center of the state of the line destination.
-            pc2 = [0,0]
             pc2 = bubbleInfo[dest][0:2]
             
             # find the closet edge point on the origin state.
@@ -180,25 +176,7 @@ def updateConnections(target):
             
             modify_draw_command("drawing##widget", line[2], p1=p1, p2=p2)
             
-'''
-        # Find the closest state position to the mouse click using (mx - px)^2 + (my - py)^2.
-        closest = float("inf")
-        for index, value in enumerate(bubbleInfo):
-            distance = pow((mx - value[0]), 2) + pow((my - value[1]), 2)
-            print(value[2] + ": " + str(distance))
-            if closest > distance:
-                closest = distance          # If this is closer, save the distance.
-                target = index              # If this is closer, save the index.
-'''
-
-'''
-del connectPoints[0]
-for n in range(numConnectPoints):
-    theta = 2.0 * math.pi * n / numConnectPoints
-    connectPoints.append([math.cos(theta)*10.0, math.sin(theta)*10.0])
-'''
-
-        
+  
 #
 # Initialize the states and connections.
 #
@@ -239,15 +217,11 @@ with window("Main Window"):
     # Create a line for each entry in connectionInfo[].
     for index, value in enumerate(connectInfo):
         lineTag = "Line" + str(index)
-        p1 = [0,0]
-        p1[0] = bubbleInfo[value[0]][4]
-        p1[1] = bubbleInfo[value[0]][5]
-        p2 = [0,0]
-        p2[0] = bubbleInfo[value[1]][4]
-        p2[1] = bubbleInfo[value[1]][5]
+        p1 = [ (bubbleInfo[value[0]][4]), (bubbleInfo[value[0]][5]) ]
+        p2 = [ (bubbleInfo[value[1]][4]), (bubbleInfo[value[1]][5]) ]
         
         draw_line("drawing##widget", p1, p2, bubbleColor, 2, tag=lineTag)
-        print(lineTag)
+        #print(lineTag)
         value[2] = lineTag
     
     # Set the graphic renderer callback to support moving the visual objects.
