@@ -1,5 +1,6 @@
 from dearpygui.core import *
 from dearpygui.simple import *
+import math
 
 # cmd /K cd "$(CURRENT_DIRECTORY)" & "python.exe" "$(FULL_CURRENT_PATH)"
 # Notepad++ mapped to [CTRL][SHIFT][NUM+]
@@ -10,20 +11,27 @@ bubbleColor = [ 255, 255, 255, 255 ]    # Bubble border color.
 dragging = False                        # No drag at init.
 target = None                           # Store the target tag while dragging.
 fontsize = [ 6, 14 ]                    # This is a guess used to center the drawn text inside the state bubble.  (size=12)
+numConnectPoints = 8                    # Number of connect points around a state.
 
-                                        # BubbleX, BubbleY, BubbleTag, LabelTag, LabelXOffset, LabelYOffset
+# bubbleInfo
+# BubbleX, BubbleY, BubbleTag, LabelTag, LabelXOffset, LabelYOffset
 bubbleInfo = [ 
     [1*radius, radius, None, None, None, None], 
     [3*radius, radius, None, None, None, None], 
     [5*radius, radius, None, None, None, None], 
     [7*radius, radius, None, None, None, None] ]
 
-                                        # FromState, ToState, LineTag
+# connectInfo
+# State-to-State transitions.
+# FromState, ToState, LineTag
 connectInfo = [
     [ 0, 1, None],
     [ 1, 2, None],
     [ 2, 3, None],
     [ 3, 0, None] ]
+
+# Connect point offsets about the center of a state.
+connectPoints = [ [0,0] ]
 
 def main_callback(sender, data):
     global doubleClickTimer
@@ -64,6 +72,8 @@ def main_callback(sender, data):
         dragging = False
         set_value("Left Mouse Clicked", "False")
         set_value("Shift + Left Mouse Clicked", "False")
+        updateConnections(target)
+        print("Release")
                 
     if is_mouse_button_double_clicked(mvMouseButton_Left):
         set_value("Left Mouse Double Clicked", "True")
@@ -90,11 +100,14 @@ def main_callback(sender, data):
         updateConnections(target)
 
 
-# updateConnections()
-# 
-# Draw the connecting lines between states.
+# <DeprecationWarning>
 #
-def updateConnections(target):
+# dragConnections()
+# 
+# Draw the connecting lines between states while dragging.
+# For simplicity, drag center-to-center right now.
+#
+def dragConnections(target):
     for line in connectInfo:
         orig = line[0]
         dest = line[1]
@@ -111,7 +124,81 @@ def updateConnections(target):
             print(line[2])
             modify_draw_command("drawing##widget", line[2], p1=p1, p2=p2)
             
+
+# updateConnections()
+# 
+# Draw each connecting line between states.
+# Find the closest connect points on each state to the center of the other.
+# Draw the line between the two points.
+#
+def updateConnections(target):
+    for line in connectInfo:
+        orig = line[0]
+        dest = line[1]
             
+        if (orig == target) or (dest == target):
+            #print(line)
+            
+            # The center of the state of the line origin.
+            pc1 = [0,0]
+            pc1 = bubbleInfo[orig][0:2]
+            
+            # The center of the state of the line destination.
+            pc2 = [0,0]
+            pc2 = bubbleInfo[dest][0:2]
+            
+            # find the closet edge point on the origin state.
+            closest = float("inf")
+            pe = [ 0, 0 ]
+            for index, value in enumerate(connectPoints):
+                pe[0] = connectPoints[index][0] + pc1[0]
+                pe[1] = connectPoints[index][1] + pc1[1]
+                distance = pow((pe[0] - pc2[0]), 2) + pow((pe[1] - pc2[1]), 2)
+                
+                if closest > distance:
+                    closest = distance          # If this is closer, save the distance.
+                    opt1 = index                # If this is closer, save the index.
+                
+            #print(opt1)
+            
+            # find the closet edge point on the destination state.
+            closest = float("inf")
+            pe = [ 0, 0 ]
+            for index, value in enumerate(connectPoints):
+                pe[0] = connectPoints[index][0] + pc2[0]
+                pe[1] = connectPoints[index][1] + pc2[1]
+                distance = pow((pe[0] - pc1[0]), 2) + pow((pe[1] - pc1[1]), 2)
+                
+                if closest > distance:
+                    closest = distance          # If this is closer, save the distance.
+                    opt2 = index                # If this is closer, save the index.
+                
+            #print(opt2)
+            
+            p1 = [pc1[0] + connectPoints[opt1][0], pc1[1] + connectPoints[opt1][1]]
+            p2 = [pc2[0] + connectPoints[opt2][0], pc2[1] + connectPoints[opt2][1]]
+            
+            modify_draw_command("drawing##widget", line[2], p1=p1, p2=p2)
+            
+'''
+        # Find the closest state position to the mouse click using (mx - px)^2 + (my - py)^2.
+        closest = float("inf")
+        for index, value in enumerate(bubbleInfo):
+            distance = pow((mx - value[0]), 2) + pow((my - value[1]), 2)
+            print(value[2] + ": " + str(distance))
+            if closest > distance:
+                closest = distance          # If this is closer, save the distance.
+                target = index              # If this is closer, save the index.
+'''
+
+'''
+del connectPoints[0]
+for n in range(numConnectPoints):
+    theta = 2.0 * math.pi * n / numConnectPoints
+    connectPoints.append([math.cos(theta)*10.0, math.sin(theta)*10.0])
+'''
+
+        
 #
 # Initialize the states and connections.
 #
@@ -143,6 +230,11 @@ with window("Main Window"):
         position[1] = position[1] - state[5]
         draw_text("drawing##widget", position, nameTag, color=bubbleColor, tag=nameTag, size=12)
     
+    # Initialize a list with the connect point offset about the center of a state.
+    del connectPoints[0]
+    for n in range(numConnectPoints):
+        theta = 2.0 * math.pi * n / numConnectPoints
+        connectPoints.append([math.cos(theta)*radius, math.sin(theta)*radius])
     
     # Create a line for each entry in connectionInfo[].
     for index, value in enumerate(connectInfo):
