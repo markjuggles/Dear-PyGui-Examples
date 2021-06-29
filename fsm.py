@@ -21,17 +21,27 @@ bubbleInfo = [
     [5*radius, radius, None, None, None, None], 
     [7*radius, radius, None, None, None, None] ]
 
-# connectInfo
-# State-to-State transitions.
-# FromState, ToState, LineTag
-connectInfo = [
-    [ 0, 1, None],
-    [ 1, 2, None],
-    [ 2, 3, None],
-    [ 3, 0, None] ]
+
+class transitionInfo(object):
+    __slots__ = [ 'state1', 'state2', 'linetag', 'arrow1tag', 'arrow2tag' ]
+    def __init__(self, state1, state2, linetag, arrow1tag, arrow2tag):
+        self.state1 = state1
+        self.state2 = state2
+        self.linetag = linetag
+        self.arrow1tag = arrow1tag
+        self.arrow2tag = arrow2tag
+        
+transitionInfoList = [ 
+    transitionInfo(0, 1, None, None, None),
+    transitionInfo(1, 2, None, None, None),
+    transitionInfo(2, 3, None, None, None),
+    transitionInfo(3, 0, None, None, None)
+                     ]
+
 
 # Connect point offsets about the center of a state.
 connectPoints = [ [0,0] ]
+
 
 def main_callback(sender, data):
     global doubleClickTimer
@@ -98,31 +108,6 @@ def main_callback(sender, data):
         updateConnections(target)
 
 
-# <DeprecationWarning>
-#
-# dragConnections()
-# 
-# Draw the connecting lines between states while dragging.
-# For simplicity, drag center-to-center right now.
-#
-def dragConnections(target):
-    for line in connectInfo:
-        orig = line[0]
-        dest = line[1]
-        if (orig == target) or (dest == target):
-            print(line)
-            p1 = [0,0]
-            p1 = bubbleInfo[orig][0:2]
-            
-            p2 = [0,0]
-            p2 = bubbleInfo[dest][0:2]
-            
-            print(p1)
-            print(p2)
-            print(line[2])
-            modify_draw_command("drawing##widget", line[2], p1=p1, p2=p2)
-            
-
 # updateConnections()
 # 
 # Draw each connecting line between states.
@@ -130,9 +115,9 @@ def dragConnections(target):
 # Draw the line between the two points.
 #
 def updateConnections(target):
-    for line in connectInfo:
-        orig = line[0]
-        dest = line[1]
+    for transition in transitionInfoList:
+        orig = transition.state1
+        dest = transition.state2
             
         if (orig == target) or (dest == target):
             #print(line)
@@ -155,8 +140,6 @@ def updateConnections(target):
                     closest = distance          # If this is closer, save the distance.
                     opt1 = index                # If this is closer, save the index.
                 
-            #print(opt1)
-            
             # find the closet edge point on the destination state.
             closest = float("inf")
             pe = [ 0, 0 ]
@@ -174,7 +157,8 @@ def updateConnections(target):
             p1 = [pc1[0] + connectPoints[opt1][0], pc1[1] + connectPoints[opt1][1]]
             p2 = [pc2[0] + connectPoints[opt2][0], pc2[1] + connectPoints[opt2][1]]
             
-            modify_draw_command("drawing##widget", line[2], p1=p1, p2=p2)
+            modify_draw_command("drawing##widget", transition.linetag, p1=p1, p2=p2)
+            
             
   
 #
@@ -215,15 +199,15 @@ with window("Main Window"):
         connectPoints.append([math.cos(theta)*radius, math.sin(theta)*radius])
     
     # Create a line for each entry in connectionInfo[].
-    for index, value in enumerate(connectInfo):
+    for index, transition in enumerate(transitionInfoList):
         lineTag = "Line" + str(index)
-        p1 = [ (bubbleInfo[value[0]][4]), (bubbleInfo[value[0]][5]) ]
-        p2 = [ (bubbleInfo[value[1]][4]), (bubbleInfo[value[1]][5]) ]
+        p1 = [ (bubbleInfo[transition.state1][4]), (bubbleInfo[transition.state2][5]) ]
+        p2 = [ (bubbleInfo[transition.state2][4]), (bubbleInfo[transition.state2][5]) ]
         
         draw_line("drawing##widget", p1, p2, bubbleColor, 2, tag=lineTag)
         #print(lineTag)
-        value[2] = lineTag
-    
+        transition.linetag = lineTag
+        
     # Set the graphic renderer callback to support moving the visual objects.
     set_render_callback(main_callback)
     
